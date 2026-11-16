@@ -109,6 +109,17 @@ def start_tournament(
 
 
 @router.post(
+    "/tournaments/{tournament_id}/reset",
+    response_model=schemas.TournamentOut,
+)
+def reset_tournament(
+    tournament_id: int,
+    db: Session = Depends(get_db),
+):
+    return svc.reset(db, tournament_id)
+
+
+@router.post(
     "/matches/{match_id}/roll",
     response_model=schemas.MatchOut,
 )

@@ -155,6 +155,34 @@ def start(
     return tournament
 
 
+def reset(db: Session, tournament_id: int) -> Tournament:
+    """Volta o torneio para 'open' mantendo os participantes e suas classes.
+
+    Apaga o chaveamento e zera o progresso de cada participante
+    (habilidades, vidas, penalidade do Imortal e eliminação).
+    """
+    tournament = get_tournament(db, tournament_id)
+
+    if tournament.status == "open":
+        raise ServiceError("O torneio ainda não foi iniciado.", 409)
+
+    tournament.matches.clear()  # delete-orphan remove os confrontos
+    tournament.status = "open"
+    tournament.rounds = 0
+    tournament.champion_id = None
+
+    for entry in tournament.entries:
+        entry.unlocked_abilities = 0
+        entry.lives_left = 0
+        entry.immortal_penalty = 0
+        entry.eliminated = False
+
+    db.commit()
+    db.refresh(tournament)
+
+    return tournament
+
+
 def roll_match(
     db: Session,
     match_id: int,

@@ -145,6 +145,50 @@ def test_rolar_final_antes_dos_adversarios_retorna_409(client, make_tournament):
     assert client.post(f"/api/matches/{final['id']}/roll").status_code == 409
 
 
+def test_reiniciar_torneio_finalizado(client, make_tournament):
+    t = make_tournament(5, start=True)
+    final = play_all(client, t["id"])
+    classes_antes = {e["id"]: e["class_key"] for e in final["entries"]}
+
+    resp = client.post(f"/api/tournaments/{t['id']}/reset")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["status"] == "open"
+    assert data["rounds"] == 0 and data["champion_id"] is None
+    assert data["matches"] == []
+    # mesmos participantes, mesmas classes, progresso zerado
+    assert {e["id"]: e["class_key"] for e in data["entries"]} == classes_antes
+    for e in data["entries"]:
+        assert not e["eliminated"] and not e["ability_unlocked"]
+        assert e["unlocked_abilities"] == 0
+        assert e["lives_left"] == 0 and e["immortal_penalty"] == 0
+
+
+def test_torneio_reiniciado_aceita_jogador_e_roda_de_novo(client, make_tournament):
+    t = make_tournament(2, start=True)
+    play_all(client, t["id"])
+    client.post(f"/api/tournaments/{t['id']}/reset")
+
+    assert client.post(f"/api/tournaments/{t['id']}/join", json={"name": "Novato"}).status_code == 201
+    assert client.post(f"/api/tournaments/{t['id']}/start").status_code == 200
+    final = play_all(client, t["id"])
+    assert final["status"] == "finished" and len(final["entries"]) == 3
+
+
+def test_reiniciar_torneio_em_andamento(client, make_tournament):
+    t = make_tournament(4, start=True)
+    client.post(f"/api/matches/{t['matches'][0]['id']}/roll")
+    data = client.post(f"/api/tournaments/{t['id']}/reset").json()
+    assert data["status"] == "open" and data["matches"] == []
+
+
+def test_reiniciar_torneio_aberto_ou_inexistente(client, make_tournament):
+    t = make_tournament(2)
+    assert client.post(f"/api/tournaments/{t['id']}/reset").status_code == 409
+    assert client.post("/api/tournaments/999/reset").status_code == 404
+
+
 def test_get_rng_padrao_devolve_random():
     import random
 

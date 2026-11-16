@@ -177,6 +177,7 @@ function atualizarBotoes() {
   const prontos = t ? duelosProntos().length : 0;
   $("btn-rolar").disabled = prontos === 0;
   $("btn-rodada").disabled = prontos === 0;
+  $("btn-reiniciar").disabled = !t || t.status === "open";
 }
 
 function duelosProntos() {
@@ -211,6 +212,16 @@ async function abrirTorneio(id) {
   estado.torneio = id ? await api(`/api/tournaments/${id}`) : null;
   desenhar();
 }
+
+// Enter em um campo de texto aciona o botão ao lado dele (mesma .linha).
+// Se o botão estiver desabilitado, click() não faz nada.
+document.querySelectorAll(".linha input").forEach((campo) => {
+  campo.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter" || ev.isComposing) return;
+    ev.preventDefault();
+    campo.closest(".linha").querySelector("button")?.click();
+  });
+});
 
 $("torneio-select").addEventListener("change", (ev) =>
   tentar(() => abrirTorneio(ev.target.value)));
@@ -257,6 +268,16 @@ $("btn-rodada").addEventListener("click", () => tentar(async () => {
   await carregarLista(estado.torneioId);
   await abrirTorneio(estado.torneioId);
   avisar("Rodada concluída.");
+}));
+
+$("btn-reiniciar").addEventListener("click", () => tentar(async () => {
+  const ok = confirm("Reiniciar o torneio? Os participantes e as classes continuam, "
+    + "mas o chaveamento e as habilidades desbloqueadas serão apagados.");
+  if (!ok) return;
+  await api(`/api/tournaments/${estado.torneioId}/reset`, "POST");
+  await carregarLista(estado.torneioId);
+  await abrirTorneio(estado.torneioId);
+  avisar("Torneio reiniciado. Inscreva mais jogadores ou inicie de novo.");
 }));
 
 tentar(async () => {
