@@ -44,12 +44,19 @@ def build_message(env, status, job, build, url, coverage) -> EmailMessage:
 
 
 def send(msg: EmailMessage, env) -> None:
-    host = env.get("SMTP_HOST", "localhost")
-    port = int(env.get("SMTP_PORT", "25"))
-    with smtplib.SMTP(host, port, timeout=15) as smtp:
-        if env.get("SMTP_USER"):
-            smtp.starttls()
-            smtp.login(env["SMTP_USER"], env.get("SMTP_PASSWORD", ""))
+    host = env.get("SMTP_HOST", "smtp.gmail.com")
+    port = int(env.get("SMTP_PORT", "587"))
+    user = env.get("SMTP_USER")
+    password = env.get("SMTP_PASSWORD")
+
+    if not user or not password:
+        raise RuntimeError("SMTP_USER e SMTP_PASSWORD precisam estar configurados.")
+
+    with smtplib.SMTP(host, port, timeout=30) as smtp:
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.ehlo()
+        smtp.login(user, password)
         smtp.send_message(msg)
 
 

@@ -59,7 +59,11 @@ unclassified:
 # Todas as etapas estão definidas no Jenkinsfile.
 jobs:
   - script: |
-      def repoUrl = System.getenv('REPO_URL') ?: 'https://github.com/ORGANIZACAO/d20-arena.git'
+      def repoUrl = System.getenv('REPO_URL')
+
+      if (!repoUrl) {
+          throw new IllegalStateException('REPO_URL não foi configurada')
+      }
 
       pipelineJob('d20-arena') {
         description('Pipeline definido no Jenkinsfile do repositório')
