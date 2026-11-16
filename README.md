@@ -76,7 +76,7 @@ Esse comando sobe quatro containers:
 - **app** (http://localhost:8000): a aplicação, construída a partir do `Dockerfile` local
 - **postgres**: o banco de dados
 - **jenkins** (http://localhost:8080): o pipeline de CI/CD
-- **mailpit** (http://localhost:8025): uma caixa de entrada de teste
+- **mailpit** (http://localhost:8025): uma caixa de entrada de teste  (Mais tarde alterado para acessar emails de verdade, mas ainda funcional se mudar o .env)
 
 A aplicação só sobe depois que o Postgres passa no health check. Para derrubar tudo, use `docker compose down`. Os dados do banco e do Jenkins ficam em volumes; se quiser apagá-los também, use `docker compose down -v`.
 
@@ -203,22 +203,54 @@ Dockerfile, docker-compose.yml, Jenkinsfile
 
 ---
 
-## Sessão: Uso de IA
+## Uso de IA
 
-Usamos IA generativa como apoio no desenvolvimento. Tudo o que ela gerou foi revisado e testado pelo grupo antes de entrar no repositório.
+Usamos IA generativa como apoio durante todo o projeto. Tudo o que ela gerou foi revisado, ajustado e testado pelo grupo antes de entrar no repositório, e passa pela mesma suíte de testes e pela cobertura mínima de 90% do pipeline.
 
-**Ferramenta:** Claude (Anthropic), via Claude Code.
+### Modelos utilizados
 
-**Onde usamos:**
+| Ferramenta | Quem usou | Modelo |
+|---|---|---|
+| Claude (Anthropic) | John | Sonnet 5.5 |
+| Claude (Anthropic) | John | Opus 5.5 |
+||Tales||
+||Vinicius||
 
-- Usado para criar a base do projeto, sua interface e funcionamento.
-- Para a criação dos ambientes e configurações do docker, porém, precisou de muitas correções manuais por parte da equipe.
-- Revisão desse README em si.
 
-**Como validamos:**
+### Para que foi usada
 
-- Conferimos os comandos e as configurações com os arquivos reais do projeto, contando com configuração manual de email, senhas, validações, testes, entre outros.
-- Todo código sugerido passa pela mesma suíte de testes e pela cobertura mínima de 90% do pipeline.
-- As regras do jogo descritas aqui foram conferidas com `app/services/classes.py` e `app/services/duel.py`.
+- **Brainstorming:** ideias de tema e definição do escopo do torneio.
+- **Geração da base do projeto:** API FastAPI, testes com pytest, `Dockerfile` da aplicação, `jenkins/Dockerfile`, `plugins.txt`, `casc.yaml`, `Jenkinsfile`, `docker-compose.yml`, `scripts/send_email.py` e a primeira versão deste README.
+- **Debugging:** execução local no Windows (PowerShell) e dúvidas sobre o funcionamento das habilidades.
+- **Documentação:** revisão deste README e preparação para a defesa.
+- (confirmar) Implementação do motor de duelo com as 4 habilidades por classe.
 
-**Cuidados tomados:** a IA pode errar (como ocorreu em alguns pontos), então nada foi colocado sem revisão. Também não compartilhamos senhas, tokens nem o `.env` com a ferramenta.
+### Exemplos reais de prompts
+
+| # | Prompt (como foi escrito) | O que a IA respondeu | Decisão |
+|---|---|---|---|
+| 1 | "Me de mais ideias interessanges, quero algo legal e facil" | Oito ideias, como torneio de e-sports, matchmaking e encurtador de URL | **Descartado.** O grupo propôs o próprio tema (prompt 3). |
+| 2 | "...lembrando que Jenkins tem que ser modo container. [...] sei la o que daria para fazer com um Jogo do Unity algo assim." | Desaconselhou rodar um jogo Unity no pipeline (licença e C# fora da cobertura do pytest) e sugeriu um backend em FastAPI | **Descartada a ideia do Unity**, aceita a stack FastAPI + pytest. |
+| 3 | "Que tal um sistema de chaveamento aonde gero um personagem aleatorio para um usuario e nele eu crio um sistema de chaves que avança voce para frente com rolagem de d20 baseado a que carta voce tirou." | Escopo: endpoints, modelo de dados, byes e gerador aleatório injetado para testar | **Aceito com ajustes.** |
+| 4 | "Certo entao quero que voce crie para mim tendo em mente o seguinte: O projeto deve seguir todos requerimentos necessários pedido pelo projeto. [...]" | Projeto base completo: app, testes, Dockerfiles, Jenkinsfile, JCasC, Compose e script de e-mail | **Aceito como base e ajustado à mão:** `casc.yaml` passou a exigir `REPO_URL` (commit c5a9f07); o e-mail saiu do Mailpit e foi para o Gmail com STARTTLS e variáveis no Compose (9f92403); testes corrigidos (ca00a5b, b64e0ce). |
+
+
+### Dinâmica de uso
+
+- A IA foi usada principalmente de forma individual em conversa com o Claude, para gerar a base e tirar dúvidas.
+- Vinícius e Tales usaram IA nas melhorias de interface.
+- As configurações geradas (Jenkinsfile, Compose, casc.yaml) foram revisadas em conjunto antes do commit.
+- Os testes automatizados serviram de rede de segurança: código gerado só entrava se a suíte e a cobertura de 90% passassem.
+- Nunca compartilhamos senhas, tokens nem o `.env` com a ferramenta.
+
+### O que não foi feito por IA
+
+- **Ideia do jogo:** torneio com carta sorteada e avanço no chaveamento por d20 (prompt 3).
+- **Design das 20 habilidades** (5 classes × 4) e da regra "uma habilidade nova por vitória".
+- **Arte das 5 cartas** (`app/static/img/`, commit d9583ff) e os ajustes de CSS para exibi-las.
+- **Criação do repositório** no Dockerfile Hub e GitHub, organização dos commits.
+- **Jenkins funcionando de verdade:** correção do `casc.yaml` para ler `REPO_URL` (c5a9f07) e testes até o pipeline passar.
+- **E-mail real:** troca para o Gmail, senha de app e configuração do `.env`.
+- **Docker Hub:** build e publicação da imagem `johnsugahara/d20-arena-jenkins:1.0`.
+- **Escolha da stack:** FastAPI + pytest e Jenkins em container com configuração como código.
+
