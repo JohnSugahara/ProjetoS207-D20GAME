@@ -4,7 +4,7 @@
    app/static/img/<chave-da-classe>.png (barbaro, ladino, mago, clerigo, guerreiro). */
 const ICONES = { barbaro: "🪓", ladino: "🗡️", mago: "🔮", clerigo: "✨", guerreiro: "🛡️" };
 
-const estado = { classes: [], torneio: null, torneioId: null };
+const estado = { classes: [], torneio: null, torneioId: null, vendoId: null };
 const $ = (id) => document.getElementById(id);
 
 function h(tag, attrs = {}, ...filhos) {
@@ -87,21 +87,29 @@ function minhaEntrada() {
   return estado.torneio.entries.find((e) => e.id === id) || null;
 }
 
+function entradaVista() {
+  if (!estado.torneio || estado.vendoId === null) return null;
+  return estado.torneio.entries.find((e) => e.id === estado.vendoId) || null;
+}
+
 function desenharCartas() {
   const minha = minhaEntrada();
+  const alvo = entradaVista() || minha;
   const destaque = $("minha-carta");
   const outras = $("outras-cartas");
   destaque.replaceChildren();
   outras.replaceChildren();
-  if (!minha) {
+  $("titulo-carta").textContent =
+    alvo && alvo !== minha ? `Carta de ${alvo.name}` : "Sua carta";
+  if (!alvo) {
     destaque.className = "vazio";
     destaque.textContent = "Entre em um torneio para sortear a sua carta.";
     return;
   }
   destaque.className = "";
-  const cls = estado.classes.find((c) => c.key === minha.class_key);
-  destaque.append(criarCarta(cls, { grande: true, entrada: minha }));
-  for (const outra of estado.classes.filter((c) => c.key !== minha.class_key)) {
+  const cls = estado.classes.find((c) => c.key === alvo.class_key);
+  destaque.append(criarCarta(cls, { grande: true, entrada: alvo }));
+  for (const outra of estado.classes.filter((c) => c.key !== alvo.class_key)) {
     outras.append(criarCarta(outra, { apagada: true }));
   }
 }
@@ -165,8 +173,15 @@ function desenharParticipantes() {
   if (!estado.torneio) return;
   for (const e of estado.torneio.entries) {
     const info = e.eliminated ? "eliminado" : e.ability_unlocked ? "habilidade ativa" : "habilidade bloqueada";
+    const link = h("a", { href: "#titulo-carta", class: "link-classe" }, e.name);
+    link.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      estado.vendoId = e.id;
+      desenharCartas();
+      $("titulo-carta").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     lista.append(h("li", { class: e.eliminated ? "eliminado" : "" },
-      h("strong", {}, e.name), h("span", {}, e.class_name), h("span", {}, info)));
+      h("strong", {}, link), h("span", {}, e.class_name), h("span", {}, info)));
   }
 }
 
@@ -208,6 +223,7 @@ async function carregarLista(selecionar) {
 }
 
 async function abrirTorneio(id) {
+  if (String(id) !== String(estado.torneioId)) estado.vendoId = null;
   estado.torneioId = id || null;
   estado.torneio = id ? await api(`/api/tournaments/${id}`) : null;
   desenhar();

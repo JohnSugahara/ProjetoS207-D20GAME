@@ -161,3 +161,9 @@ button:disabled { background: #3a4a45; border-color: #3a4a45; color: var(--apaga
 .lista-habilidades .bloqueada {
   opacity: 0.58;
 }
+.participantes .link-classe {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+.participantes .link-classe:hover { color: var(--latao); }
