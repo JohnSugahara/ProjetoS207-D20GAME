@@ -107,3 +107,110 @@ docker push <DOCKERHUB_USER>/d20-arena-jenkins:1.0
 ```
 
 ---
+
+## Uso
+
+### Jogando pela interface
+
+1. Abra http://localhost:8000 e crie um torneio, ou escolha um que já existe.
+2. Digite o nome de cada jogador e clique em **Sortear carta**. A classe é sorteada na hora. São de 2 a 32 jogadores por torneio.
+3. Clique em **Iniciar torneio** para montar o chaveamento.
+4. Role os duelos um por vez (**Rolar próximo duelo**) ou a rodada inteira de uma vez (**Rolar rodada inteira**).
+5. Cada confronto mostra um log com as rolagens e as habilidades que entraram em jogo. No final, aparece o campeão.
+
+### Usando a API
+
+| Método | Rota | O que faz |
+|---|---|---|
+| `GET` | `/api/classes` | Lista as classes e as habilidades |
+| `GET` | `/api/tournaments` | Lista os torneios |
+| `POST` | `/api/tournaments` | Cria um torneio: `{"name": "...", "unlock_abilities": true}` |
+| `GET` | `/api/tournaments/{id}` | Mostra o torneio com os participantes e os confrontos |
+| `POST` | `/api/tournaments/{id}/join` | Inscreve um jogador: `{"name": "..."}` |
+| `POST` | `/api/tournaments/{id}/start` | Inicia o torneio |
+| `POST` | `/api/matches/{id}/roll` | Rola o duelo de um confronto |
+
+Por exemplo:
+
+```bash
+curl -X POST http://localhost:8000/api/tournaments -H "Content-Type: application/json" -d '{"name": "Copa D20"}'
+```
+
+### Pipeline no Jenkins
+
+Quando o Jenkins sobe, ele já cria o job `d20-arena`, que confere o repositório a cada 5 minutos. O `Jenkinsfile` tem quatro etapas:
+
+1. **Preparar ambiente:** cria o venv e instala as dependências.
+2. **Testes:** roda o pytest e reprova o build se a cobertura ficar abaixo de 90%. Os relatórios JUnit e de cobertura ficam arquivados.
+3. **Build/Pacote:** gera o `dist/d20-arena-<build>.zip`.
+4. **Notificar:** o `scripts/send_email.py` manda um e-mail para `NOTIFY_EMAIL` com o status, a cobertura e o link do build. Se alguma etapa falhar, sai um e-mail de **FAILURE**.
+
+---
+
+## Funcionalidades
+
+### O torneio
+
+- O chaveamento é de eliminatória simples, com a ordem dos jogadores embaralhada.
+- Quando o número de jogadores não é potência de 2, alguns avançam direto por **bye**.
+- O vencedor de cada duelo vai sozinho para a próxima rodada.
+- Não pode haver dois jogadores com o mesmo nome no mesmo torneio.
+- Dá para criar torneios com o desbloqueio de habilidades desligado.
+- Tudo fica salvo no banco: SQLite no desenvolvimento e PostgreSQL no Docker.
+
+### Classes
+
+Cada classe tem 4 habilidades, liberadas uma por vitória:
+
+| Classe | Habilidades |
+|---|---|
+| **Bárbaro** | Fúria Implacável (uma vida extra) → Titã de Ferro (perder por até 5 vira empate) → Sangue do Berserk (+5 depois da Fúria) → Imortal (sobrevive a derrotas, mas acumula penalidade até -20) |
+| **Ladino** | Ataque Furtivo (+2) → Assassinato (+1d6) → Premonição de Perigo (perder pela margem exata de um 1d4 vira empate) → Haki da Visão (se o inimigo tirar um múltiplo de 3, a derrota vira empate) |
+| **Mago** | Vantagem Arcana (rola 2d20 e fica com o maior) → Elementalista (Pedra, Água, Fogo ou Vento) → Prisão Arcana (anula uma habilidade do inimigo) → Vazio Roxo (1 natural vira 20) |
+| **Clérigo** | Bênção Divina (rola de novo um 1 natural) → Mãos Curativas (refaz o duelo se perder por pouco) → Guardião Espiritual (+10 no 20 natural) → Made in Heaven (com um 20 natural, silencia o inimigo) |
+| **Guerreiro** | Disciplina de Combate (vence empates) → Mortal (+3) → Herói (1 natural vira 20) → Ex Machina (refaz o duelo se perder tirando de 1 a 9) |
+
+### Qualidade e DevOps
+
+- **Testes automatizados** em `tests/`, cobrindo a API, o chaveamento, os duelos, o banco e o script de e-mail.
+- **Testes determinísticos:** o gerador aleatório é injetado como dependência (`app/deps.py`). Nos testes, ele é trocado por um com seed fixa, então os dados sempre dão o mesmo resultado.
+- **Cobertura mínima de 90%**, verificada pelo pipeline.
+- **Container da aplicação** com `python:3.12-slim`, rodando com um usuário sem privilégios e com health check.
+- **Jenkins configurado como código** (JCasC), sem nenhuma configuração manual pela interface.
+- **Notificação por e-mail**, com o destinatário vindo do ambiente e não fixo no código.
+
+### Estrutura
+
+```
+app/
+  main.py, database.py, models.py, schemas.py, deps.py
+  routers/api.py          # rotas /api
+  services/               # chaveamento, classes, duelos e regras do torneio
+  static/                 # frontend (HTML, CSS, JS)
+scripts/send_email.py     # e-mail do pipeline
+tests/                    # testes automatizados
+jenkins/                  # imagem e configuração do Jenkins
+Dockerfile, docker-compose.yml, Jenkinsfile
+```
+
+---
+
+## Sessão: Uso de IA
+
+Usamos IA generativa como apoio no desenvolvimento. Tudo o que ela gerou foi revisado e testado pelo grupo antes de entrar no repositório.
+
+**Ferramenta:** Claude (Anthropic), via Claude Code.
+
+**Onde usamos:**
+
+- Usado para criar a base do projeto, sua interface e funcionamento.
+- Para a criação dos ambientes e configurações do docker, porém, precisou de muitas correções manuais por parte da equipe.
+- Revisão desse README em si.
+
+**Como validamos:**
+
+- Conferimos os comandos e as configurações com os arquivos reais do projeto, contando com configuração manual de email, senhas, validações, testes, entre outros.
+- Todo código sugerido passa pela mesma suíte de testes e pela cobertura mínima de 90% do pipeline.
+- As regras do jogo descritas aqui foram conferidas com `app/services/classes.py` e `app/services/duel.py`.
+
+**Cuidados tomados:** a IA pode errar (como ocorreu em alguns pontos), então nada foi colocado sem revisão. Também não compartilhamos senhas, tokens nem o `.env` com a ferramenta.
