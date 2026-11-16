@@ -42,7 +42,7 @@ def build_message(env, status, job, build, url, coverage) -> EmailMessage:
     )
     return msg
 
-
+# ESSE E PARA O GMAIL
 def send(msg: EmailMessage, env) -> None:
     host = env.get("SMTP_HOST", "smtp.gmail.com")
     port = int(env.get("SMTP_PORT", "587"))
@@ -58,6 +58,21 @@ def send(msg: EmailMessage, env) -> None:
         smtp.ehlo()
         smtp.login(user, password)
         smtp.send_message(msg)
+# ESSE E PARA O MAILPIT
+# def send(msg: EmailMessage, env) -> None:
+#     host = env.get("SMTP_HOST", "mailpit")
+#     port = int(env.get("SMTP_PORT", "1025"))
+#     user = env.get("SMTP_USER")
+
+#     with smtplib.SMTP(host, port, timeout=30) as smtp:
+#         if user:
+#             # Servidor real (ex.: Gmail): canal cifrado e login.
+#             smtp.ehlo()
+#             smtp.starttls()
+#             smtp.ehlo()
+#             smtp.login(user, env.get("SMTP_PASSWORD", ""))
+#         # Sem usuário (Mailpit): envio direto, sem TLS nem login.
+#         smtp.send_message(msg)
 
 
 def main(argv=None, env=None) -> int:
