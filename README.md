@@ -113,10 +113,10 @@ docker push <DOCKERHUB_USER>/d20-arena-jenkins:1.0
 ### Jogando pela interface
 
 1. Abra http://localhost:8000 e crie um torneio, ou escolha um que já existe.
-2. Digite o nome de cada jogador e clique em **Sortear carta**. A classe é sorteada na hora. São de 2 a 32 jogadores por torneio.
+2. Digite o nome de cada jogador e clique em **Sortear carta**. A classe é sorteada na hora. São de 2 a 32 jogadores por torneio. Enquanto o torneio não começa, dá para tirar alguém da lista clicando no **×** ao lado do nome.
 3. Clique em **Iniciar torneio** para montar o chaveamento.
-4. Role os duelos um por vez (**Rolar próximo duelo**) ou a rodada inteira de uma vez (**Rolar rodada inteira**).
-5. Cada confronto mostra um log com as rolagens e as habilidades que entraram em jogo. No final, aparece o campeão.
+4. Role os duelos um por vez (**Rolar próximo duelo**), a rodada inteira de uma vez (**Rolar rodada inteira**) ou tudo até sair o campeão (**Rolar torneio inteiro**). Esse último também funciona com o torneio ainda aberto: ele inicia e já resolve todos os duelos.
+5. Em cada confronto, **Ver rolagens** mostra o log com as rolagens e as habilidades que entraram em jogo. No final, o campeão aparece no centro da chave.
 6. Para jogar de novo com o mesmo grupo, clique em **Reiniciar torneio**. Os jogadores e as classes continuam, mas o chaveamento e o progresso são apagados. Depois disso, dá para inscrever mais gente e iniciar outra vez.
 
 Nos campos de texto, apertar **Enter** tem o mesmo efeito de clicar no botão ao lado.
@@ -130,6 +130,7 @@ Nos campos de texto, apertar **Enter** tem o mesmo efeito de clicar no botão ao
 | `POST` | `/api/tournaments` | Cria um torneio: `{"name": "...", "unlock_abilities": true}` |
 | `GET` | `/api/tournaments/{id}` | Mostra o torneio com os participantes e os confrontos |
 | `POST` | `/api/tournaments/{id}/join` | Inscreve um jogador: `{"name": "..."}` |
+| `DELETE` | `/api/tournaments/{id}/entries/{entry_id}` | Remove um participante (só antes de iniciar) |
 | `POST` | `/api/tournaments/{id}/start` | Inicia o torneio |
 | `POST` | `/api/tournaments/{id}/reset` | Reinicia um torneio em andamento ou terminado |
 | `POST` | `/api/matches/{id}/roll` | Rola o duelo de um confronto |
@@ -155,10 +156,12 @@ Quando o Jenkins sobe, ele já cria o job `d20-arena`, que confere o repositóri
 
 ### O torneio
 
-- O chaveamento é de eliminatória simples, com a ordem dos jogadores embaralhada.
+- O chaveamento é de eliminatória simples, com a ordem dos jogadores embaralhada. Ele é desenhado no formato de Copa: metade dos confrontos de cada lado, com a final no centro.
 - Quando o número de jogadores não é potência de 2, alguns avançam direto por **bye**.
 - O vencedor de cada duelo vai sozinho para a próxima rodada.
 - Não pode haver dois jogadores com o mesmo nome no mesmo torneio.
+- Participantes podem ser removidos antes do início, o que libera o nome e a vaga.
+- Dá para resolver o torneio inteiro de uma vez, sem rolar duelo por duelo.
 - Dá para criar torneios com o desbloqueio de habilidades desligado.
 - Um torneio em andamento ou terminado pode ser reiniciado sem precisar cadastrar todo mundo de novo.
 - Tudo fica salvo no banco: SQLite no desenvolvimento e PostgreSQL no Docker.
