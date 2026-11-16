@@ -213,7 +213,7 @@ Usamos IA generativa como apoio durante todo o projeto. Tudo o que ela gerou foi
 |---|---|---|
 | Claude (Anthropic) | John | Sonnet 5.5 |
 | Claude (Anthropic) | John | Opus 5.5 |
-||Tales||
+| Claude (Anthropic) |Tales| Sonnet 5.5|
 | Claude (Anthropic) |Vinicius| Opus 5.5 |
 
 
@@ -224,6 +224,7 @@ Usamos IA generativa como apoio durante todo o projeto. Tudo o que ela gerou foi
 - **Debugging:** execução local no Windows (PowerShell) e dúvidas sobre o funcionamento das habilidades.
 - **Documentação:** revisão deste README e preparação para a defesa.
 - (confirmar) Implementação do motor de duelo com as 4 habilidades por classe.
+- Funcionalidades de interface (textos clicáveis e estilização CSS)
 
 ### Exemplos reais de prompts
 
