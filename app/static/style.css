@@ -92,6 +92,8 @@ button:disabled { background: #3a4a45; border-color: #3a4a45; color: var(--apaga
 .carta .arte {
     width: 172px;
     height: 252px;
+    min-width: 172px;
+    min-height: 252px;
     aspect-ratio: 86 / 126;
     background: #d8cba8;
     border-radius: 4px;
@@ -99,15 +101,16 @@ button:disabled { background: #3a4a45; border-color: #3a4a45; color: var(--apaga
     place-items: center;
     overflow: hidden;
     margin: 0 auto;
-    flex-shrink: 0;
+    flex: 0 0 172px;
 }
 
 .carta .arte img {
+    display: block;
     width: 172px;
     height: 252px;
-    object-fit: contain;
+    max-width: none;
+    object-fit: fill;
     image-rendering: pixelated;
-    image-rendering: crisp-edges;
 }
 .carta .arte .icone { font-size: 3.2rem; }
 .carta .habilidade { font-weight: 700; margin: 0; color: var(--vinho); }
