@@ -214,7 +214,7 @@ Usamos IA generativa como apoio durante todo o projeto. Tudo o que ela gerou foi
 | Claude (Anthropic) | John | Sonnet 5.5 |
 | Claude (Anthropic) | John | Opus 5.5 |
 ||Tales||
-||Vinicius||
+| Claude (Anthropic) |Vinicius| Opus 5.5 |
 
 
 ### Para que foi usada
