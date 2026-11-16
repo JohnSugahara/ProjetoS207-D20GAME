@@ -24,7 +24,7 @@ class FakeSMTP:
         return False
 
     def ehlo(self):
-        pass
+        self.ehlo_called += 1
 
     def starttls(self):
         self.tls = True
