@@ -120,57 +120,96 @@ function nomeEntrada(id) {
   return e ? e : null;
 }
 
-function desenharLado(id, venceu, decidido) {
+/* Chave no formato de Copa: metade dos confrontos à esquerda, metade à
+   direita, e a final no centro. Cada confronto tem o seu "Ver rolagens". */
+const FASES = ["Final", "Semifinal", "Quartas", "Oitavas"];
+
+function nomeFase(rodada, total) {
+  return FASES[total - rodada] || `Rodada ${rodada}`;
+}
+
+function desenharLado(id, venceu, decidido, bye) {
   const e = id ? nomeEntrada(id) : null;
-  const lado = h("div", { class: `lado${decidido ? (venceu ? " vencedor" : " perdedor") : ""}` });
+  const lado = h("span", { class: `lado${decidido ? (venceu ? " vencedor" : " perdedor") : ""}` });
   if (!e) {
-    lado.append(h("span", {}, "a definir"));
+    lado.append(h("span", { class: "nome vago" }, bye ? "bye" : "a definir"));
     return lado;
   }
-  lado.append(h("span", {}, e.name), h("span", { class: "classe" }, e.class_name));
+  lado.append(h("span", { class: "nome" }, e.name), h("span", { class: "classe" }, e.class_name));
   return lado;
+}
+
+function desenharDuelo(m) {
+  const decidido = m.winner_id !== null;
+  const pronto = !decidido && m.entry_a_id && m.entry_b_id;
+  const duelo = h("div", { class: `duelo${pronto ? " pronto" : ""}${m.is_bye ? " bye" : ""}` },
+    desenharLado(m.entry_a_id, m.winner_id === m.entry_a_id, decidido),
+    desenharLado(m.entry_b_id, m.winner_id === m.entry_b_id, decidido && !m.is_bye, m.is_bye));
+  if (m.log.length) {
+    // "Ver rolagens" abre o log numa janelinha por cima da página (popover):
+    // não é cortada pela rolagem da chave e não desalinha os confrontos.
+    const id = `log-${m.id}`;
+    const nome = (eid) => nomeEntrada(eid)?.name || "bye";
+    const titulo = `${nomeFase(m.round_no, estado.torneio.rounds)} · ${nome(m.entry_a_id)} x ${nome(m.entry_b_id)}`;
+    const fechar = h("button", {
+      type: "button", class: "fechar", popovertarget: id, popovertargetaction: "hide", "aria-label": "Fechar",
+    }, "×");
+    const janela = h("div", { id, popover: "", class: "log-duelo" },
+      h("div", { class: "log-topo" }, h("h3", {}, titulo), fechar));
+    for (const linha of m.log) janela.append(h("p", {}, linha));
+    duelo.append(h("button", { type: "button", class: "ver-rolagens", popovertarget: id }, "Ver rolagens"), janela);
+  }
+  return duelo;
+}
+
+function colunaRodada(rodada, total, partidas, extraClasse = "") {
+  const vagas = h("div", { class: "vagas" });
+  for (const m of partidas) vagas.append(h("div", { class: "vaga" }, desenharDuelo(m)));
+  return h("div", { class: `rodada${extraClasse}` }, h("h3", {}, nomeFase(rodada, total)), vagas);
 }
 
 function desenharChave() {
   const t = estado.torneio;
   const chave = $("chave");
   chave.replaceChildren();
-  $("campeao").textContent = "";
   $("titulo-chave").textContent = t ? `Chaveamento · ${t.name}` : "Chaveamento";
   if (!t) return;
 
-  if (t.status === "finished") {
-    const campeao = nomeEntrada(t.champion_id);
-    $("campeao").textContent = `Campeão: ${campeao.name} (${campeao.class_name})`;
-  }
   if (t.status === "open") {
     chave.append(h("p", { class: "vazio" }, "O chaveamento aparece quando o torneio for iniciado."));
     return;
   }
-  for (let r = 1; r <= t.rounds; r++) {
-    const coluna = h("div", { class: "rodada" },
-      h("h3", {}, r === t.rounds ? "Final" : `Rodada ${r}`));
-    for (const m of t.matches.filter((x) => x.round_no === r)) {
-      const decidido = m.winner_id !== null;
-      const pronto = !decidido && m.entry_a_id && m.entry_b_id;
-      const duelo = h("div", { class: `duelo${pronto ? " pronto" : ""}` },
-        desenharLado(m.entry_a_id, m.winner_id === m.entry_a_id, decidido),
-        desenharLado(m.entry_b_id, m.winner_id === m.entry_b_id, decidido && !m.is_bye));
-      if (m.log.length) {
-        const detalhes = h("details", {}, h("summary", {}, "Ver rolagens"));
-        for (const linha of m.log) detalhes.append(h("p", {}, linha));
-        duelo.append(detalhes);
-      }
-      coluna.append(duelo);
-    }
-    chave.append(coluna);
+
+  const esquerda = h("div", { class: "metade esquerda" });
+  const direita = h("div", { class: "metade direita" });
+  for (let r = 1; r < t.rounds; r++) {
+    const partidas = t.matches.filter((x) => x.round_no === r);
+    const meio = partidas.length / 2;
+    esquerda.append(colunaRodada(r, t.rounds, partidas.slice(0, meio)));
+    direita.append(colunaRodada(r, t.rounds, partidas.slice(meio)));
   }
+
+  const final = t.matches.find((x) => x.round_no === t.rounds);
+  const centro = colunaRodada(t.rounds, t.rounds, [final], " centro");
+  const vagaFinal = centro.querySelector(".vaga");
+  vagaFinal.prepend(h("div", { class: "trofeu", "aria-hidden": "true" }, "🏆"));
+  if (t.status === "finished") {
+    const campeao = nomeEntrada(t.champion_id);
+    vagaFinal.append(h("div", { class: "campeao" },
+      h("span", {}, "Campeão"), h("strong", {}, campeao.name), h("span", {}, campeao.class_name)));
+  }
+
+  chave.append(esquerda, centro, direita);
 }
 
 function desenharParticipantes() {
   const lista = $("participantes");
   lista.replaceChildren();
   if (!estado.torneio) return;
+  if (!estado.torneio.entries.length) {
+    lista.append(h("li", { class: "vazio" }, "Ninguém entrou ainda."));
+    return;
+  }
   for (const e of estado.torneio.entries) {
     const info = e.eliminated ? "eliminado" : e.ability_unlocked ? "habilidade ativa" : "habilidade bloqueada";
     const link = h("a", { href: "#titulo-carta", class: "link-classe" }, e.name);
@@ -180,9 +219,30 @@ function desenharParticipantes() {
       desenharCartas();
       $("titulo-carta").scrollIntoView({ behavior: "smooth", block: "start" });
     });
-    lista.append(h("li", { class: e.eliminated ? "eliminado" : "" },
-      h("strong", {}, link), h("span", {}, e.class_name), h("span", {}, info)));
+    const item = h("li", { class: e.eliminated ? "eliminado" : "" },
+      h("strong", {}, link), h("span", {}, e.class_name), h("span", {}, info));
+    // Só dá para remover antes de iniciar: depois o jogador já está na chave.
+    if (estado.torneio.status === "open") {
+      const remover = h("button", {
+        type: "button", class: "remover", title: `Remover ${e.name}`, "aria-label": `Remover ${e.name}`,
+      }, "×");
+      remover.addEventListener("click", () => removerParticipante(e));
+      item.append(remover);
+    }
+    lista.append(item);
   }
+}
+
+function removerParticipante(e) {
+  return tentar(async () => {
+    if (!confirm(`Remover ${e.name} do torneio?`)) return;
+    await api(`/api/tournaments/${estado.torneioId}/entries/${e.id}`, "DELETE");
+    if (estado.vendoId === e.id) estado.vendoId = null;
+    const chaveEu = `d20.eu.${estado.torneioId}`;
+    if (Number(localStorage.getItem(chaveEu)) === e.id) localStorage.removeItem(chaveEu);
+    await abrirTorneio(estado.torneioId);
+    avisar(`${e.name} saiu do torneio.`);
+  });
 }
 
 function atualizarBotoes() {
@@ -192,6 +252,9 @@ function atualizarBotoes() {
   const prontos = t ? duelosProntos().length : 0;
   $("btn-rolar").disabled = prontos === 0;
   $("btn-rodada").disabled = prontos === 0;
+  // Rolar tudo: também serve para um torneio aberto (inicia e já resolve tudo).
+  const podeIniciar = t && t.status === "open" && t.entries.length >= 2;
+  $("btn-tudo").disabled = !(prontos > 0 || podeIniciar);
   $("btn-reiniciar").disabled = !t || t.status === "open";
 }
 
@@ -284,6 +347,29 @@ $("btn-rodada").addEventListener("click", () => tentar(async () => {
   await carregarLista(estado.torneioId);
   await abrirTorneio(estado.torneioId);
   avisar("Rodada concluída.");
+}));
+
+$("btn-tudo").addEventListener("click", () => tentar(async () => {
+  const botoes = document.querySelectorAll("#sec-acoes button");
+  botoes.forEach((b) => { b.disabled = true; });  // evita clique duplo no meio
+  avisar("Rolando todos os duelos...");
+  try {
+    if (estado.torneio.status === "open") {
+      estado.torneio = await api(`/api/tournaments/${estado.torneioId}/start`, "POST");
+    }
+    // Rola rodada por rodada até sair o campeão.
+    let prontos = duelosProntos();
+    while (prontos.length) {
+      for (const partida of prontos) await rolar(partida);
+      estado.torneio = await api(`/api/tournaments/${estado.torneioId}`);
+      prontos = duelosProntos();
+    }
+  } finally {
+    await carregarLista(estado.torneioId);
+    await abrirTorneio(estado.torneioId);
+  }
+  const campeao = nomeEntrada(estado.torneio.champion_id);
+  avisar(campeao ? `Torneio concluído! Campeão: ${campeao.name}.` : "Duelos concluídos.");
 }));
 
 $("btn-reiniciar").addEventListener("click", () => tentar(async () => {

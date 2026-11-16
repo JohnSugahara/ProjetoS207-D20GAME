@@ -189,6 +189,40 @@ def test_reiniciar_torneio_aberto_ou_inexistente(client, make_tournament):
     assert client.post("/api/tournaments/999/reset").status_code == 404
 
 
+def test_remover_participante(client, make_tournament):
+    t = make_tournament(3)
+    alvo = t["entries"][1]
+
+    resp = client.delete(f"/api/tournaments/{t['id']}/entries/{alvo['id']}")
+    assert resp.status_code == 204
+
+    data = client.get(f"/api/tournaments/{t['id']}").json()
+    assert [e["id"] for e in data["entries"]] == [t["entries"][0]["id"], t["entries"][2]["id"]]
+    # o nome fica livre para entrar de novo
+    assert client.post(f"/api/tournaments/{t['id']}/join", json={"name": alvo["name"]}).status_code == 201
+
+
+def test_remover_participante_libera_vaga_no_limite(client, make_tournament):
+    t = make_tournament(32)
+    client.delete(f"/api/tournaments/{t['id']}/entries/{t['entries'][0]['id']}")
+    assert client.post(f"/api/tournaments/{t['id']}/join", json={"name": "Novo"}).status_code == 201
+
+
+def test_remover_participante_depois_de_iniciado_retorna_409(client, make_tournament):
+    t = make_tournament(2, start=True)
+    resp = client.delete(f"/api/tournaments/{t['id']}/entries/{t['entries'][0]['id']}")
+    assert resp.status_code == 409
+
+
+def test_remover_participante_inexistente_ou_de_outro_torneio_retorna_404(client, make_tournament):
+    a = make_tournament(2)
+    b = make_tournament(2)
+    assert client.delete(f"/api/tournaments/{a['id']}/entries/999").status_code == 404
+    # participante existe, mas é do torneio b
+    assert client.delete(f"/api/tournaments/{a['id']}/entries/{b['entries'][0]['id']}").status_code == 404
+    assert client.delete(f"/api/tournaments/999/entries/1").status_code == 404
+
+
 def test_get_rng_padrao_devolve_random():
     import random
 

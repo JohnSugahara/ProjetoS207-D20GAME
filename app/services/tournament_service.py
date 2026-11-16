@@ -99,6 +99,29 @@ def join(
     return entry
 
 
+def remove_entry(
+    db: Session,
+    tournament_id: int,
+    entry_id: int,
+) -> None:
+    """Tira um participante do torneio (só antes de o torneio começar)."""
+    tournament = get_tournament(db, tournament_id)
+
+    if tournament.status != "open":
+        raise ServiceError(
+            "Não é possível remover participantes depois que o torneio começou.",
+            409,
+        )
+
+    entry = db.get(Entry, entry_id)
+
+    if entry is None or entry.tournament_id != tournament.id:
+        raise _not_found("Participante")
+
+    tournament.entries.remove(entry)  # delete-orphan apaga a linha
+    db.commit()
+
+
 def start(
     db: Session,
     tournament_id: int,

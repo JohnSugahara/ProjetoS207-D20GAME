@@ -92,6 +92,18 @@ def join_tournament(
     )
 
 
+@router.delete(
+    "/tournaments/{tournament_id}/entries/{entry_id}",
+    status_code=204,
+)
+def remove_entry(
+    tournament_id: int,
+    entry_id: int,
+    db: Session = Depends(get_db),
+):
+    svc.remove_entry(db, tournament_id, entry_id)
+
+
 @router.post(
     "/tournaments/{tournament_id}/start",
     response_model=schemas.TournamentOut,

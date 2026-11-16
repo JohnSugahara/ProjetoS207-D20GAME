@@ -74,7 +74,9 @@ button:disabled { background: #3a4a45; border-color: #3a4a45; color: var(--apaga
 .vazio { color: var(--apagado); font-style: italic; }
 
 /* Cartas */
-.cartas { display: flex; flex-wrap: wrap; gap: 1rem; }
+/* As 4 "outras classes" sempre lado a lado, dividindo a largura disponível */
+.cartas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.cartas .carta { width: auto; }
 .carta {
   width: 11.5rem;
   background: var(--papel);
@@ -111,28 +113,145 @@ button:disabled { background: #3a4a45; border-color: #3a4a45; color: var(--apaga
 .carta .descricao { margin: 0; font-size: 0.9rem; }
 .carta .estado { margin: 0; font-size: 0.85rem; font-style: italic; }
 
-/* Chaveamento */
-.chave { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem; }
-.rodada { display: flex; flex-direction: column; justify-content: space-around; gap: 0.75rem; min-width: 13.5rem; }
-.rodada h3 { margin: 0 0 0.25rem; font-size: 1rem; color: var(--latao); }
-.duelo { background: var(--mesa-escura); border: 1px solid #28574d; border-radius: 6px; overflow: hidden; }
-.duelo.pronto { border-color: var(--latao); }
-.lado { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.4rem 0.6rem; }
-.lado + .lado { border-top: 1px solid #28574d; }
-.lado.vencedor { background: #24493f; font-weight: 700; }
-.lado.perdedor { color: var(--apagado); text-decoration: line-through; }
-.lado .classe { font-size: 0.8rem; color: var(--apagado); }
-.duelo details { border-top: 1px solid #28574d; padding: 0.3rem 0.6rem; font-size: 0.8rem; }
-.duelo summary { cursor: pointer; color: var(--latao); }
-.duelo details p { margin: 0.25rem 0 0; }
-#campeao { font-size: 1.3rem; color: var(--latao); margin-bottom: 0.75rem; }
+/* Carta em destaque com a lista de participantes ao lado */
+.carta-e-lista { display: flex; gap: 1.5rem; align-items: flex-start; }
+.lista-lateral {
+  flex: 1;
+  min-width: 0;
+  background: var(--mesa-escura);
+  border: 1px solid #28574d;
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+}
+.lista-lateral h3 { margin: 0 0 0.6rem; font-size: 1rem; color: var(--latao); }
 
 .participantes { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
-.participantes li { display: flex; gap: 0.75rem; align-items: baseline; }
+.participantes li { display: flex; flex-wrap: wrap; column-gap: 0.75rem; align-items: baseline; }
+.participantes li span { font-size: 0.85rem; color: var(--apagado); }
 .participantes .eliminado { color: var(--apagado); text-decoration: line-through; }
+.participantes .remover {
+  width: auto;
+  margin-left: auto;
+  padding: 0 0.4rem;
+  border: none;
+  background: transparent;
+  color: var(--apagado);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.participantes .remover:hover { color: #ff9b8a; background: transparent; }
+
+/* Chaveamento no formato de Copa: esquerda → final no centro ← direita */
+.sec-chave { grid-column: 1 / -1; }
+.chave {
+  --w: 8.75rem;        /* largura de um confronto */
+  --g: 1.75rem;        /* espaço entre as colunas (onde passam as linhas) */
+  --linha: 2px solid #4d8a7c;
+  display: flex;
+  justify-content: safe center;
+  overflow-x: auto;
+  scrollbar-color: #4d8a7c transparent;
+  padding: 0.5rem 0 1rem;
+}
+.metade { display: flex; gap: var(--g); }
+.metade.direita { flex-direction: row-reverse; }
+.chave > * + * { margin-left: var(--g); }
+
+.rodada { display: flex; flex-direction: column; width: var(--w); flex-shrink: 0; }
+.rodada h3 { margin: 0 0 0.5rem; font-size: 0.85rem; text-align: center; color: var(--latao); text-transform: uppercase; letter-spacing: 0.06em; }
+.vagas { flex: 1; display: flex; flex-direction: column; }
+.vaga { flex: 1; min-height: 5.6rem; padding: 0.4rem 0; display: flex; align-items: center; position: relative; }
+.rodada.centro .vagas { min-height: 13rem; }
+
+/* Linhas: cada confronto puxa uma linha para fora e liga ao seu par. */
+.vaga::after, .vaga::before { content: ""; position: absolute; pointer-events: none; }
+.esquerda .vaga::after { left: 100%; width: calc(var(--g) / 2); }
+.direita  .vaga::after { right: 100%; width: calc(var(--g) / 2); }
+.vaga:nth-child(odd)::after  { top: 50%; height: 50%; border-top: var(--linha); }
+.vaga:nth-child(even)::after { top: 0; height: 50%; border-bottom: var(--linha); }
+.esquerda .vaga::after { border-right: var(--linha); }
+.direita  .vaga::after { border-left: var(--linha); }
+.vaga:only-child::after { height: 0; border-left: none !important; border-right: none !important; }
+/* Linha de entrada, vinda da coluna anterior */
+.esquerda .rodada + .rodada .vaga::before { right: 100%; width: calc(var(--g) / 2); top: 50%; border-top: var(--linha); }
+.direita  .rodada + .rodada .vaga::before { left: 100%; width: calc(var(--g) / 2); top: 50%; border-top: var(--linha); }
+/* A final recebe uma linha de cada lado (só quando existem outras rodadas) */
+.metade:not(:empty) ~ .centro .vaga::before { right: 100%; width: calc(var(--g) / 2); top: 50%; border-top: var(--linha); }
+.metade:not(:empty) ~ .centro .vaga::after  { left: 100%; width: calc(var(--g) / 2); top: 50%; height: 0; border: none; border-top: var(--linha); }
+
+.duelo {
+  width: 100%;
+  display: block;
+  padding: 0;
+  text-align: left;
+  font-weight: 400;
+  color: var(--papel);
+  background: var(--mesa-escura);
+  border: 1px solid #28574d;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.duelo.pronto { border-color: var(--latao); box-shadow: 0 0 0 1px var(--latao); }
+.centro .duelo { border-width: 2px; border-color: var(--latao); }
+.lado { display: flex; flex-direction: column; padding: 0.3rem 0.5rem; line-height: 1.2; }
+.lado + .lado { border-top: 1px solid #28574d; }
+.lado .nome { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lado .nome.vago { color: var(--apagado); font-style: italic; }
+.lado .classe { font-size: 0.72rem; color: var(--apagado); }
+.lado.vencedor { background: #24493f; }
+.lado.vencedor .nome { font-weight: 700; color: var(--latao); }
+.lado.perdedor .nome { color: var(--apagado); text-decoration: line-through; }
+
+/* "Ver rolagens" dentro de cada confronto */
+.duelo .ver-rolagens {
+  width: 100%;
+  display: block;
+  padding: 0.2rem 0.5rem;
+  border: none;
+  border-top: 1px solid #28574d;
+  border-radius: 0;
+  background: transparent;
+  color: var(--latao);
+  font-size: 0.75rem;
+  font-weight: 400;
+  text-align: left;
+}
+.duelo .ver-rolagens:hover { background: #163a33; text-decoration: underline; }
+
+/* Janela com o log do confronto (abre por cima da página) */
+.log-duelo {
+  width: min(30rem, 90vw);
+  max-height: 70vh;
+  overflow: auto;
+  padding: 1rem 1.25rem;
+  background: var(--mesa-escura);
+  color: var(--papel);
+  border: 1px solid var(--latao);
+  border-radius: 8px;
+  font-family: var(--fonte);
+}
+.log-duelo::backdrop { background: rgba(0, 0, 0, 0.45); }
+.log-topo { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+.log-duelo .log-topo h3 { margin: 0; font-size: 1rem; color: var(--latao); text-align: left; text-transform: none; letter-spacing: normal; }
+.log-duelo .fechar { width: auto; padding: 0 0.3rem; border: none; background: transparent; color: var(--papel); font-size: 1.5rem; line-height: 1; }
+.log-duelo .fechar:hover { color: var(--latao); }
+.log-duelo p { margin: 0.25rem 0; font-size: 0.9rem; }
+
+.trofeu { position: absolute; left: 0; right: 0; bottom: calc(50% + 3.5rem); text-align: center; font-size: 2.6rem; line-height: 1; }
+.campeao {
+  position: absolute; left: -1rem; right: -1rem; top: calc(50% + 3.5rem);
+  display: flex; flex-direction: column; align-items: center; text-align: center; line-height: 1.25;
+}
+.campeao span { font-size: 0.75rem; color: var(--apagado); text-transform: uppercase; letter-spacing: 0.06em; }
+.campeao strong { font-size: 1.15rem; color: var(--latao); }
 
 @media (max-width: 52rem) {
   .mesa { grid-template-columns: 1fr; }
+  .carta-e-lista { flex-direction: column; }
+  .lista-lateral { width: 100%; }
+}
+@media (max-width: 36rem) {
+  .cartas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto; }
