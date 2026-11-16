@@ -1,0 +1,82 @@
+# # Jenkins Configuration as Code: nada é configurado pela interface gráfica.
+# jenkins:
+#   systemMessage: "D20 Arena - CI/CD (configurado via casc.yaml)"
+#   numExecutors: 2
+#   securityRealm:
+#     local:
+#       allowsSignup: false
+#       users:
+#         - id: "${JENKINS_ADMIN_ID:-admin}"
+#           password: "${JENKINS_ADMIN_PASSWORD:-admin}"
+#   authorizationStrategy:
+#     loggedInUsersCanDoAnything:
+#       allowAnonymousRead: false
+
+# unclassified:
+#   location:
+#     url: "http://localhost:8080/"
+
+# # O job só aponta para o repositório (checkout). Todas as etapas estão no Jenkinsfile.
+# jobs:
+#   - script: |
+#       pipelineJob('d20-arena') {
+#         description('Pipeline definido no Jenkinsfile do repositório')
+#         definition {
+#           cpsScm {
+#             scm {
+#               git {
+#                 remote { url('${REPO_URL:-https://github.com/ORGANIZACAO/d20-arena.git}') }
+#                 branch('main')
+#               }
+#             }
+#             scriptPath('Jenkinsfile')
+#             lightweight(true)
+#           }
+#         }
+#         triggers { scm('H/5 * * * *') }
+#       }
+#       queue('d20-arena')
+
+# Jenkins Configuration as Code: nada é configurado pela interface gráfica.
+jenkins:
+  systemMessage: "D20 Arena - CI/CD (configurado via casc.yaml)"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_ID:-admin}"
+          password: "${JENKINS_ADMIN_PASSWORD:-admin}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+unclassified:
+  location:
+    url: "http://localhost:8080/"
+
+# O job apenas configura o checkout.
+# Todas as etapas estão definidas no Jenkinsfile.
+jobs:
+  - script: |
+      def repoUrl = System.getenv('REPO_URL') ?: 'https://github.com/ORGANIZACAO/d20-arena.git'
+
+      pipelineJob('d20-arena') {
+        description('Pipeline definido no Jenkinsfile do repositório')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url(repoUrl)
+                }
+                branch('main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+        triggers { scm('H/5 * * * *') }
+      }
+      queue('d20-arena')

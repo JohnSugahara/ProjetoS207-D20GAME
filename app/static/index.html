@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>D20 Arena</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topo">
+    <h1>D20 Arena</h1>
+    <p>Sorteie sua carta, entre no chaveamento e deixe os dados decidirem.</p>
+  </header>
+
+  <main class="mesa">
+    <aside class="painel">
+      <section>
+        <h2>Torneio</h2>
+        <label for="torneio-select">Escolher torneio</label>
+        <select id="torneio-select"></select>
+        <label for="torneio-nome">Novo torneio</label>
+        <div class="linha">
+          <input id="torneio-nome" maxlength="40" placeholder="Nome do torneio">
+          <button id="btn-criar" type="button">Criar</button>
+        </div>
+      </section>
+
+      <section id="sec-entrar">
+        <h2>Entrar</h2>
+        <label for="jogador-nome">Seu nome</label>
+        <div class="linha">
+          <input id="jogador-nome" maxlength="40" placeholder="Nome do jogador">
+          <button id="btn-entrar" type="button">Sortear carta</button>
+        </div>
+      </section>
+
+      <section id="sec-acoes">
+        <h2>Chaveamento</h2>
+        <button id="btn-iniciar" type="button">Iniciar torneio</button>
+        <button id="btn-rolar" type="button">Rolar próximo duelo</button>
+        <button id="btn-rodada" type="button">Rolar rodada inteira</button>
+      </section>
+
+      <p id="mensagem" role="status" aria-live="polite"></p>
+    </aside>
+
+    <div class="conteudo">
+      <section>
+        <h2>Sua carta</h2>
+        <div id="minha-carta" class="vazio">Entre em um torneio para sortear a sua carta.</div>
+      </section>
+
+      <section>
+        <h2>Outras classes</h2>
+        <div id="outras-cartas" class="cartas"></div>
+      </section>
+
+      <section>
+        <h2 id="titulo-chave">Chaveamento</h2>
+        <div id="campeao"></div>
+        <div id="chave" class="chave"></div>
+      </section>
+
+      <section>
+        <h2>Participantes</h2>
+        <ul id="participantes" class="participantes"></ul>
+      </section>
+    </div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

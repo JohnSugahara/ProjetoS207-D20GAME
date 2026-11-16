@@ -1,0 +1,120 @@
+# # 4 containers: postgres (Hub) + app (Dockerfile local) + mailpit (Hub) + jenkins (Hub, imagem do grupo)
+# services:
+#   postgres:
+#     image: postgres:16-alpine
+#     environment:
+#       POSTGRES_USER: ${POSTGRES_USER:-d20}
+#       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+#       POSTGRES_DB: ${POSTGRES_DB:-d20_arena}
+#     volumes:
+#       - pgdata:/var/lib/postgresql/data      # dados do banco sobrevivem a `docker compose down`
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+#       interval: 5s
+#       timeout: 3s
+#       retries: 10
+
+#   app:
+#     build: .                                 # Dockerfile LOCAL
+#     environment:
+#       # "postgres" = nome do serviço = nome DNS na rede interna do Compose
+#       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-d20}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-d20_arena}
+#     depends_on:
+#       postgres:
+#         condition: service_healthy           # espera o banco ficar pronto, não só iniciado
+#     ports:
+#       - "8000:8000"
+#     healthcheck:
+#       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+#       interval: 10s
+#       timeout: 3s
+#       retries: 5
+
+#   mailpit:
+#     image: axllent/mailpit:latest            # SMTP de teste: caixa de entrada em http://localhost:8025
+#     ports:
+#       - "8025:8025"
+
+#   jenkins:
+#     image: ${DOCKERHUB_USER:?defina DOCKERHUB_USER no .env}/d20-arena-jenkins:${JENKINS_IMAGE_TAG:-1.0}   # puxada do Docker Hub
+#     environment:
+#       NOTIFY_EMAIL: ${NOTIFY_EMAIL:?defina NOTIFY_EMAIL no .env}   # destinatário vem do ambiente
+#       SMTP_HOST: mailpit                     # Jenkins -> mailpit (comunicação entre containers)
+#       SMTP_PORT: "1025"
+#       SMTP_FROM: ${SMTP_FROM:-jenkins@d20-arena.local}
+#       REPO_URL: ${REPO_URL:?defina REPO_URL no .env}
+#       JENKINS_ADMIN_ID: ${JENKINS_ADMIN_ID:-admin}
+#       JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?defina JENKINS_ADMIN_PASSWORD no .env}
+#     volumes:
+#       - jenkins_home:/var/jenkins_home       # jobs, builds e artefatos persistem
+#     depends_on:
+#       - mailpit
+#     ports:
+#       - "8080:8080"
+
+# volumes:
+#   pgdata:
+#   jenkins_home:
+
+# 4 containers: postgres (Hub) + app (Dockerfile local) + mailpit (Hub) + jenkins (Hub)
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-d20}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-d20_arena}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-d20}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-d20_arena}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8025/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  jenkins:
+    image: ${DOCKERHUB_USER:?defina DOCKERHUB_USER no .env}/d20-arena-jenkins:${JENKINS_IMAGE_TAG:-1.0}
+    environment:
+      NOTIFY_EMAIL: ${NOTIFY_EMAIL:?defina NOTIFY_EMAIL no .env}
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_FROM: ${SMTP_FROM:-jenkins@d20-arena.local}
+      REPO_URL: ${REPO_URL:?defina REPO_URL no .env}
+      JENKINS_ADMIN_ID: ${JENKINS_ADMIN_ID:-admin}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?defina JENKINS_ADMIN_PASSWORD no .env}
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
+  jenkins_home:

@@ -1,0 +1,155 @@
+:root {
+  --mesa: #17352f;
+  --mesa-escura: #0f241f;
+  --papel: #efe6cf;
+  --tinta: #2a2118;
+  --latao: #c9a227;
+  --vinho: #7a1e2c;
+  --apagado: #8a9a92;
+  --fonte: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--fonte);
+  background: var(--mesa);
+  color: var(--papel);
+  line-height: 1.5;
+}
+
+.topo { padding: 2rem 1.5rem 1rem; max-width: 72rem; margin: 0 auto; }
+.topo h1 { margin: 0; font-size: 2.6rem; letter-spacing: 0.02em; color: var(--latao); }
+.topo p { margin: 0.25rem 0 0; color: var(--apagado); }
+
+.mesa {
+  display: grid;
+  grid-template-columns: 19rem 1fr;
+  gap: 2rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 3rem;
+}
+
+.painel {
+  background: var(--mesa-escura);
+  border: 1px solid #28574d;
+  border-radius: 6px;
+  padding: 1.25rem;
+  align-self: start;
+}
+.painel section + section { margin-top: 1.5rem; }
+h2 { font-size: 1.15rem; margin: 0 0 0.75rem; font-weight: 700; }
+label { display: block; font-size: 0.9rem; margin: 0.75rem 0 0.25rem; color: var(--apagado); }
+
+input, select, button {
+  font: inherit;
+  padding: 0.5rem 0.65rem;
+  border-radius: 4px;
+  border: 1px solid #3b6b60;
+  background: #0b1b17;
+  color: var(--papel);
+  width: 100%;
+}
+.linha { display: flex; gap: 0.5rem; }
+.linha input { flex: 1; min-width: 0; }
+.linha button { width: auto; white-space: nowrap; }
+
+button {
+  cursor: pointer;
+  background: var(--vinho);
+  border-color: var(--vinho);
+  font-weight: 700;
+}
+button:hover { background: #962638; }
+button:disabled { background: #3a4a45; border-color: #3a4a45; color: var(--apagado); cursor: not-allowed; }
+#sec-acoes button { margin-bottom: 0.5rem; }
+:focus-visible { outline: 3px solid var(--latao); outline-offset: 2px; }
+
+#mensagem { min-height: 1.5rem; margin: 1rem 0 0; color: var(--latao); }
+#mensagem.erro { color: #ff9b8a; }
+
+.conteudo section { margin-bottom: 2.25rem; }
+.vazio { color: var(--apagado); font-style: italic; }
+
+/* Cartas */
+.cartas { display: flex; flex-wrap: wrap; gap: 1rem; }
+.carta {
+  width: 11.5rem;
+  background: var(--papel);
+  color: var(--tinta);
+  border: 3px solid var(--vinho);
+  border-radius: 8px;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.carta.grande { width: 16rem; border-color: var(--latao); box-shadow: 0 0 0 3px var(--vinho), 0 10px 24px rgba(0, 0, 0, 0.45); }
+.carta.apagada { opacity: 0.55; filter: grayscale(0.6); }
+.carta h3 { margin: 0; font-size: 1.2rem; }
+.carta .arte {
+  aspect-ratio: 3 / 4;
+  background: #d8cba8;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.carta .arte img { width: 100%; height: 100%; object-fit: cover; }
+.carta .arte .icone { font-size: 3.2rem; }
+.carta .habilidade { font-weight: 700; margin: 0; color: var(--vinho); }
+.carta .descricao { margin: 0; font-size: 0.9rem; }
+.carta .estado { margin: 0; font-size: 0.85rem; font-style: italic; }
+
+/* Chaveamento */
+.chave { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem; }
+.rodada { display: flex; flex-direction: column; justify-content: space-around; gap: 0.75rem; min-width: 13.5rem; }
+.rodada h3 { margin: 0 0 0.25rem; font-size: 1rem; color: var(--latao); }
+.duelo { background: var(--mesa-escura); border: 1px solid #28574d; border-radius: 6px; overflow: hidden; }
+.duelo.pronto { border-color: var(--latao); }
+.lado { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.4rem 0.6rem; }
+.lado + .lado { border-top: 1px solid #28574d; }
+.lado.vencedor { background: #24493f; font-weight: 700; }
+.lado.perdedor { color: var(--apagado); text-decoration: line-through; }
+.lado .classe { font-size: 0.8rem; color: var(--apagado); }
+.duelo details { border-top: 1px solid #28574d; padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+.duelo summary { cursor: pointer; color: var(--latao); }
+.duelo details p { margin: 0.25rem 0 0; }
+#campeao { font-size: 1.3rem; color: var(--latao); margin-bottom: 0.75rem; }
+
+.participantes { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
+.participantes li { display: flex; gap: 0.75rem; align-items: baseline; }
+.participantes .eliminado { color: var(--apagado); text-decoration: line-through; }
+
+@media (max-width: 52rem) {
+  .mesa { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto; }
+}
+
+/* Lista de habilidades da carta: cada classe exibe somente sua própria progressão. */
+.lista-habilidades {
+  margin: 0.5rem 0 0;
+  padding-left: 1.35rem;
+  text-align: left;
+}
+.lista-habilidades li {
+  margin: 0.45rem 0;
+  padding-left: 0.15rem;
+}
+.lista-habilidades .habilidade,
+.lista-habilidades .descricao {
+  margin: 0.1rem 0;
+}
+.lista-habilidades .estado-habilidade {
+  display: inline-block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+.lista-habilidades .bloqueada {
+  opacity: 0.58;
+}
